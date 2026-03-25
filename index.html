@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Grade Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0f1a;
+      --surface:   #161929;
+      --card:      #1e2235;
+      --border:    #2a2f4a;
+      --accent:    #6c63ff;
+      --accent2:   #48cfad;
+      --danger:    #ff5370;
+      --text:      #e8eaf6;
+      --muted:     #8891b2;
+      --A:         #48cfad;
+      --B:         #6c63ff;
+      --C:         #ffd166;
+      --D:         #f4a261;
+      --Fail:      #ff5370;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(108,99,255,.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(72,207,173,.12) 0%, transparent 50%);
+    }
+
+    /* ── Layout ── */
+    .wrapper { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+    /* ── Header ── */
+    header {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 2rem 0 2.5rem;
+    }
+    .logo-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: grid; place-items: center; font-size: 1.6rem;
+      box-shadow: 0 4px 24px rgba(108,99,255,.4);
+      flex-shrink: 0;
+    }
+    header h1 { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 800; letter-spacing: -.5px; }
+    header p  { color: var(--muted); font-size: .875rem; margin-top: .2rem; }
+    .badge {
+      margin-left: auto; background: rgba(108,99,255,.15);
+      border: 1px solid rgba(108,99,255,.35); border-radius: 999px;
+      padding: .4rem 1rem; font-size: .8rem; font-weight: 600;
+      color: #a89fff; white-space: nowrap;
+    }
+
+    /* ── Grid ── */
+    .grid { display: grid; gap: 1.5rem; grid-template-columns: 340px 1fr; }
+    @media(max-width: 820px){ .grid { grid-template-columns: 1fr; } }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1.75rem;
+    }
+    .card-title {
+      font-size: .75rem; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 1.25rem;
+    }
+
+    /* ── Form ── */
+    .field { margin-bottom: 1.1rem; }
+    label  { display: block; font-size: .82rem; font-weight: 500; color: var(--muted); margin-bottom: .45rem; }
+    input[type="text"], input[type="number"] {
+      width: 100%; padding: .75rem 1rem;
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 10px; color: var(--text); font-family: inherit;
+      font-size: .95rem; transition: border-color .2s, box-shadow .2s;
+      outline: none;
+    }
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(108,99,255,.18);
+    }
+    input::placeholder { color: var(--muted); }
+
+    .btn-add {
+      width: 100%; padding: .85rem;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      border: none; border-radius: 10px;
+      color: #fff; font-family: inherit; font-size: .95rem; font-weight: 700;
+      cursor: pointer; transition: opacity .2s, transform .15s;
+      display: flex; align-items: center; justify-content: center; gap: .5rem;
+      position: relative; overflow: hidden;
+    }
+    .btn-add:hover  { opacity: .9; transform: translateY(-1px); }
+    .btn-add:active { transform: translateY(0); }
+    .btn-add.loading { pointer-events: none; opacity: .6; }
+
+    /* ── Stats ── */
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 1.1rem 1rem; text-align: center;
+      transition: transform .2s;
+    }
+    .stat-card:hover { transform: translateY(-2px); }
+    .stat-value { font-size: 1.6rem; font-weight: 800; }
+    .stat-label { font-size: .75rem; color: var(--muted); margin-top: .25rem; font-weight: 500; }
+    .stat-card.purple .stat-value { color: var(--accent); }
+    .stat-card.green  .stat-value { color: var(--accent2); }
+    .stat-card.yellow .stat-value { color: var(--C); }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    thead th {
+      background: var(--surface); color: var(--muted);
+      font-size: .72rem; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; padding: .75rem 1rem;
+      text-align: left; border-bottom: 1px solid var(--border);
+    }
+    tbody tr {
+      border-bottom: 1px solid rgba(42,47,74,.6);
+      transition: background .15s;
+      animation: rowIn .35s ease;
+    }
+    tbody tr:hover { background: rgba(108,99,255,.05); }
+    td { padding: .85rem 1rem; vertical-align: middle; }
+
+    .grade-badge {
+      display: inline-block; padding: .25rem .7rem; border-radius: 999px;
+      font-size: .75rem; font-weight: 700;
+    }
+    .grade-A    { background: rgba(72,207,173,.15);  color: var(--A);    }
+    .grade-B    { background: rgba(108,99,255,.15);  color: var(--B);    }
+    .grade-C    { background: rgba(255,209,102,.15); color: var(--C);    }
+    .grade-D    { background: rgba(244,162,97,.15);  color: var(--D);    }
+    .grade-Fail { background: rgba(255,83,112,.15);  color: var(--Fail); }
+
+    .btn-del {
+      background: rgba(255,83,112,.12); border: 1px solid rgba(255,83,112,.25);
+      color: var(--danger); border-radius: 8px; padding: .38rem .7rem;
+      font-size: .8rem; font-weight: 600; cursor: pointer; transition: background .2s;
+    }
+    .btn-del:hover { background: rgba(255,83,112,.25); }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center; padding: 3.5rem 1rem; color: var(--muted);
+    }
+    .empty .icon { font-size: 3rem; margin-bottom: .75rem; }
+    .empty p { font-size: .9rem; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 2rem; right: 2rem;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: .85rem 1.25rem;
+      font-size: .875rem; font-weight: 500; color: var(--text);
+      box-shadow: 0 8px 32px rgba(0,0,0,.4);
+      transform: translateY(120px); opacity: 0;
+      transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .3s;
+      display: flex; align-items: center; gap: .6rem;
+      z-index: 999;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { border-color: var(--accent2); }
+    #toast.error   { border-color: var(--danger);  }
+
+    /* ── Progress bar ── */
+    .marks-bar { height: 4px; border-radius: 999px; background: var(--border); margin-top: 5px; }
+    .marks-fill {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width .5s ease;
+    }
+
+    /* ── Animations ── */
+    @keyframes rowIn {
+      from { opacity: 0; transform: translateX(-12px); }
+      to   { opacity: 1; transform: translateX(0);     }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <header>
+    <div class="logo-icon">S</div>
+    <div>
+      <h1>Student Grade Manager</h1>
+      <p>Track performance &amp; auto-calculate grades</p>
+    </div>
+    <div class="badge" id="count-badge">0 Students</div>
+  </header>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card purple">
+      <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-label">Total Students</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-value" id="stat-avg">—</div>
+      <div class="stat-label">Class Average</div>
+    </div>
+    <div class="stat-card yellow">
+      <div class="stat-value" id="stat-topper">—</div>
+      <div class="stat-label">Topper</div>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <!-- Add Student Form -->
+    <div class="card">
+      <div class="card-title">Add New Student</div>
+
+      <form id="add-form" autocomplete="off">
+        <div class="field">
+          <label for="inp-name">Student Name</label>
+          <input id="inp-name" type="text" placeholder="e.g. Rahul Sharma" required/>
+        </div>
+        <div class="field">
+          <label for="inp-marks">Marks (0 – 100)</label>
+          <input id="inp-marks" type="number" placeholder="e.g. 85" min="0" max="100" step="0.1" required/>
+        </div>
+        <button type="submit" class="btn-add" id="add-btn">
+          <span id="btn-text">Add Student</span>
+        </button>
+      </form>
+
+      <!-- Grade guide -->
+      <div style="margin-top:1.5rem;">
+        <div class="card-title">Grade Scale</div>
+        <div style="display:flex;flex-direction:column;gap:.5rem;font-size:.82rem;">
+          <div style="display:flex;align-items:center;gap:.6rem;">
+            <span class="grade-badge grade-A">A</span><span style="color:var(--muted)">90 – 100</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.6rem;">
+            <span class="grade-badge grade-B">B</span><span style="color:var(--muted)">75 – 89</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.6rem;">
+            <span class="grade-badge grade-C">C</span><span style="color:var(--muted)">60 – 74</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.6rem;">
+            <span class="grade-badge grade-D">D</span><span style="color:var(--muted)">40 – 59</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.6rem;">
+            <span class="grade-badge grade-Fail">Fail</span><span style="color:var(--muted)">Below 40</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Students Table -->
+    <div class="card">
+      <div class="card-title">All Students</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Marks</th>
+              <th>Progress</th>
+              <th>Grade</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="student-tbody"></tbody>
+        </table>
+        <div class="empty" id="empty-state">
+          <div class="icon">—</div>
+          <p>No students yet. Add one to get started!</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+  let students = [];
+
+  // ── Toast ──────────────────────────────────
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className   = `show ${type}`;
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.className = ''; }, 3000);
+  }
+
+  // ── Render table ───────────────────────────
+  function renderTable() {
+    const tbody = document.getElementById('student-tbody');
+    const empty = document.getElementById('empty-state');
+
+    tbody.innerHTML = '';
+
+    if (students.length === 0) {
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    students.forEach((s, i) => {
+      const pct = Math.min(100, Math.max(0, s.marks));
+      const tr  = document.createElement('tr');
+      tr.id     = `row-${s.id}`;
+      tr.innerHTML = `
+        <td style="color:var(--muted);font-size:.82rem">${i + 1}</td>
+        <td><strong>${escHtml(s.name)}</strong></td>
+        <td style="font-weight:600">${s.marks}</td>
+        <td style="min-width:80px">
+          <div class="marks-bar"><div class="marks-fill" style="width:${pct}%"></div></div>
+        </td>
+        <td><span class="grade-badge grade-${s.grade}">${s.grade}</span></td>
+        <td><button class="btn-del" onclick="deleteStudent(${s.id})">Delete</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ── Update stats ───────────────────────────
+  async function refreshStats() {
+    try {
+      const r = await fetch('/stats');
+      const d = await r.json();
+      document.getElementById('stat-total').textContent  = d.total || 0;
+      document.getElementById('stat-avg').textContent    = d.average ? `${d.average}%` : '—';
+      document.getElementById('stat-topper').textContent = d.topper ? d.topper.name : '—';
+      document.getElementById('count-badge').textContent = `${d.total || 0} Student${d.total !== 1 ? 's' : ''}`;
+    } catch(e) { console.error(e); }
+  }
+
+  // ── Load all students ──────────────────────
+  async function loadStudents() {
+    try {
+      const r = await fetch('/students');
+      students = await r.json();
+      renderTable();
+      refreshStats();
+    } catch(e) {
+      showToast('Could not connect to server', 'error');
+    }
+  }
+
+  // ── Add student ────────────────────────────
+  document.getElementById('add-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name  = document.getElementById('inp-name').value.trim();
+    const marks = parseFloat(document.getElementById('inp-marks').value);
+    const btn   = document.getElementById('add-btn');
+    const txt   = document.getElementById('btn-text');
+
+    btn.classList.add('loading');
+    txt.textContent = 'Adding...';
+
+    try {
+      const r = await fetch('/add_student', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, marks })
+      });
+      const d = await r.json();
+
+      if (!r.ok) {
+        showToast(d.error, 'error');
+      } else {
+        students.unshift(d);
+        renderTable();
+        refreshStats();
+        document.getElementById('add-form').reset();
+        showToast(`${name} added - Grade ${d.grade}`, 'success');
+      }
+    } catch(err) {
+      showToast('❌ Server error', 'error');
+    } finally {
+      btn.classList.remove('loading');
+      txt.textContent = 'Add Student';
+    }
+  });
+
+  // ── Delete student ─────────────────────────
+  async function deleteStudent(id) {
+    const row = document.getElementById(`row-${id}`);
+    if (row) { row.style.opacity = '.4'; row.style.transition = 'opacity .3s'; }
+
+    try {
+      const r = await fetch(`/student/${id}`, { method: 'DELETE' });
+      if (r.ok) {
+        students = students.filter(s => s.id !== id);
+        renderTable();
+        refreshStats();
+        showToast('Student deleted', 'success');
+      } else {
+        showToast('Could not delete', 'error');
+        if (row) row.style.opacity = '1';
+      }
+    } catch(e) {
+      showToast('Server error', 'error');
+      if (row) row.style.opacity = '1';
+    }
+  }
+
+  // ── Helpers ────────────────────────────────
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── Init ───────────────────────────────────
+  loadStudents();
+</script>
+</body>
+</html>
